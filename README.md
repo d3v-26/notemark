@@ -2,7 +2,7 @@
 
 A minimal local-first note-taking app. Your pages live as plain markdown files on your own machine — no accounts, no sync, no cloud.
 
-![Dark UI with sidebar and block editor](https://placehold.co/900x500/111111/444444?text=screenshot)
+![Dark UI with sidebar and block editor](public/ss.png)
 
 ## How it works
 
