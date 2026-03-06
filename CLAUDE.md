@@ -25,3 +25,25 @@ A minimal local-first Notion clone. Pages are markdown files on disk, served and
 ## Commands
 - `npm start` - Start the server (default port 3000)
 - `npm run dev` - Start with file watching (nodemon)
+
+---
+
+## NC (Notemark) — Auto-generated Summary
+
+**What it does:** Block-based markdown note-taking app. The browser reads/writes `.md` files directly on the user's machine via the File System Access API (Chrome/Edge only). The Express server only serves the static frontend — it is not involved in any I/O at runtime.
+
+**Project type:** frontend | **Stack:** Vanilla JS, HTML, CSS, Node.js + Express
+
+**Key files:**
+| File | Role |
+|------|------|
+| `server.js` | Serves `public/` as static files; also defines a REST API for pages that is **not called** by the frontend |
+| `public/app.js` | All frontend logic: folder picker, IndexedDB handle persistence, File System API I/O, block editor, markdown parser/serializer, sidebar, slash menu, context menu, modals |
+| `public/index.html` | App shell; pre-declares all overlay DOM (slash menu, context menu, confirm modal, folder picker screen) |
+| `public/style.css` | Dark design system; CSS custom properties; block types styled via `[data-type]` attribute selectors |
+
+**Critical architectural note:** The frontend uses `FileSystemDirectoryHandle` / `FileSystemFileHandle` directly — it never calls `/api/pages`. The root handle is persisted in IndexedDB (`db: "nc"`, store: `"handles"`, key: `"root"`). The `marked` npm dependency is declared but never imported.
+
+**How to run:** `npm start` then open `http://localhost:3000` in Chrome or Edge
+
+**Docs generated:** 2026-02-22 → `PROJECT_DOCS.md`

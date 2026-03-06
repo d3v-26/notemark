@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const PAGES_DIR = path.join(__dirname, 'pages');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Ensure pages dir exists
 if (!fs.existsSync(PAGES_DIR)) fs.mkdirSync(PAGES_DIR);
@@ -135,7 +135,7 @@ app.patch('/api/pages/*', (req, res) => {
 
 // SPA fallback
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {

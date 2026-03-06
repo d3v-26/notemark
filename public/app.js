@@ -1,12 +1,16 @@
 // ── Icons ──
 
 const icons = {
-  chevronRight: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  chevronDown:  `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  fileDot:      `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="1.5" fill="currentColor" opacity="0.5"/></svg>`,
-  x:            `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-  grip:         `<svg width="10" height="12" viewBox="0 0 10 12" fill="none"><circle cx="3" cy="2.5" r="1" fill="currentColor"/><circle cx="7" cy="2.5" r="1" fill="currentColor"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="7" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="9.5" r="1" fill="currentColor"/><circle cx="7" cy="9.5" r="1" fill="currentColor"/></svg>`,
+  chevronRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`,
+  chevronDown:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+  fileText:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`,
+  trash2:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+  gripVertical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`,
 };
+
+function icon(name, size = 16) {
+  return icons[name] || '';
+}
 
 // ── State ──
 
@@ -31,6 +35,8 @@ const newPageBtn = $('#newPageBtn');
 const folderPickerScreen = $('#folderPickerScreen');
 const openFolderBtn = $('#openFolderBtn');
 const changeFolderBtn = $('#changeFolderBtn');
+const saveIndicator = $('#saveIndicator');
+const breadcrumb = $('#breadcrumb');
 
 // ── IndexedDB helpers ──
 
@@ -187,7 +193,7 @@ function renderTree(items, container, depth = 0) {
 
     const icon = document.createElement('span');
     icon.className = 'icon';
-    icon.innerHTML = item.type === 'folder' ? icons.chevronDown : icons.fileDot;
+    icon.innerHTML = item.type === 'folder' ? icons.chevronDown : icons.fileText;
     div.appendChild(icon);
 
     const label = document.createElement('span');
@@ -198,7 +204,7 @@ function renderTree(items, container, depth = 0) {
     if (item.type === 'page') {
       const delBtn = document.createElement('button');
       delBtn.className = 'delete-btn';
-      delBtn.innerHTML = icons.x;
+      delBtn.innerHTML = icons.trash2;
       delBtn.title = 'Delete';
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -214,6 +220,7 @@ function renderTree(items, container, depth = 0) {
         const children = div.nextElementSibling;
         if (children) children.style.display = children.style.display === 'none' ? '' : 'none';
         icon.innerHTML = children && children.style.display === 'none' ? icons.chevronRight : icons.chevronDown;
+
       }
     });
 
@@ -243,6 +250,7 @@ async function openPage(pagePath) {
   const data = await readFilePage(pagePath);
   currentPage = pagePath;
 
+  breadcrumb.textContent = pagePath.replace(/\.md$/, '').replace(/\//g, ' / ');
   editorContainer.classList.add('visible');
   emptyState.classList.add('hidden');
 
@@ -257,10 +265,19 @@ async function savePage() {
   if (!currentPage) return;
   const content = serializeBlocks();
   await writeFilePage(currentPage, content);
+  saveIndicator.textContent = 'Saved';
+  saveIndicator.className = 'save-indicator saved';
+  clearTimeout(saveIndicator._clearTimeout);
+  saveIndicator._clearTimeout = setTimeout(() => {
+    saveIndicator.textContent = '';
+    saveIndicator.className = 'save-indicator';
+  }, 1500);
 }
 
 function scheduleSave() {
   clearTimeout(saveTimeout);
+  saveIndicator.textContent = 'Saving\u2026';
+  saveIndicator.className = 'save-indicator saving';
   saveTimeout = setTimeout(savePage, 800);
 }
 
@@ -389,7 +406,7 @@ function createBlock(type = 'p', text = '', index = 1) {
 
   const handle = document.createElement('div');
   handle.className = 'block-handle';
-  handle.innerHTML = icons.grip;
+  handle.innerHTML = icons.gripVertical;
 
   const content = document.createElement('div');
   content.className = 'block-content';
@@ -739,6 +756,8 @@ pageTitle.addEventListener('keydown', (e) => {
 // ── Init ──
 
 async function init() {
+  lucide.createIcons();
+
   if (!('showDirectoryPicker' in window)) {
     openFolderBtn.textContent = 'Browser not supported';
     openFolderBtn.disabled = true;
