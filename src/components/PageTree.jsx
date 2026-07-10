@@ -35,18 +35,18 @@ function PageTreeItem({
     return (
       <div>
         <div
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer text-[13px] text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors select-none"
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer text-[12.5px] text-[#93a098] hover:bg-white/[.055] hover:text-white transition-colors select-none"
           style={{ paddingLeft: 8 + depth * 14 }}
           onClick={() => setExpanded(!expanded)}
         >
-          <span className="flex items-center text-muted-foreground/60 flex-shrink-0">
+          <span className="flex items-center text-[#718078] flex-shrink-0">
             {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </span>
-          <FolderOpen size={13} className="flex-shrink-0" />
+          <FolderOpen size={13} className="flex-shrink-0 text-[#718078]" />
           <span className="truncate flex-1">{item.name}</span>
         </div>
         {expanded && item.children && (
-          <div className="ml-3 border-l border-border/50 pl-1">
+          <div className="ml-3 border-l border-white/[.06] pl-1">
             {item.children.map(child => (
               <PageTreeItem
                 key={child.path}
@@ -102,21 +102,21 @@ function PageTreeItem({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              'flex items-center gap-1.5 px-2 py-[5px] rounded-md cursor-pointer text-[13px] text-muted-foreground transition-colors select-none group',
-              'hover:bg-secondary hover:text-foreground',
-              isActive && 'bg-violet-subtle text-primary font-medium [&]:hover:bg-violet-subtle'
+              'flex items-center gap-2 px-2 py-[6px] rounded-md cursor-pointer text-[12.5px] text-[#93a098] transition-colors select-none group',
+              'hover:bg-white/[.055] hover:text-white',
+              isActive && 'font-medium'
             )}
             style={{
               paddingLeft: 8 + depth * 14,
-              backgroundColor: isActive ? 'rgba(124,58,237,0.12)' : undefined,
-              color: isActive ? '#a78bfa' : undefined,
+              backgroundColor: isActive ? 'rgba(237,104,70,0.13)' : undefined,
+              color: isActive ? '#f18a70' : undefined,
             }}
             onClick={() => onPageOpen(item.path)}
           >
             <FileText
               size={13}
-              className={cn('flex-shrink-0', isActive ? 'text-primary' : 'text-muted-foreground/50')}
-              style={isActive ? { color: '#a78bfa' } : undefined}
+              className="flex-shrink-0"
+              style={{ color: isActive ? '#f18a70' : '#66746c' }}
             />
             <span className="truncate flex-1">{item.name}</span>
           </div>

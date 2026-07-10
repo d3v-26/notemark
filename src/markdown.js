@@ -32,6 +32,10 @@ export function parseMarkdown(content, fallbackName) {
 
     if (line.trim() === '') continue;
 
+    const indentMatch = line.match(/^(\s*)/);
+    const indent = Math.floor((indentMatch?.[1].replace(/\t/g, '  ').length || 0) / 2);
+    const trimmedLine = line.trimStart();
+
     if (line.startsWith('# ') && !line.startsWith('## ') && !titleSet) {
       title = line.slice(2);
       titleSet = true;
@@ -41,10 +45,21 @@ export function parseMarkdown(content, fallbackName) {
       blocks.push({ id: genId(), type: 'h2', content: line.slice(3) });
     } else if (line.startsWith('# ')) {
       blocks.push({ id: genId(), type: 'h1', content: line.slice(2) });
-    } else if (line.match(/^[-*] /)) {
-      blocks.push({ id: genId(), type: 'ul', content: line.slice(2) });
-    } else if (line.match(/^\d+\. /)) {
-      blocks.push({ id: genId(), type: 'ol', content: line.replace(/^\d+\.\s/, '') });
+    } else if (trimmedLine.match(/^!\[.*\]\(.+\)$/)) {
+      const image = trimmedLine.match(/^!\[(.*)\]\((.+)\)$/);
+      blocks.push({ id: genId(), type: 'image', content: image[1], src: image[2] });
+    } else if (trimmedLine.match(/^[-*] \[[ xX]\] /)) {
+      blocks.push({
+        id: genId(), type: 'todo', indent,
+        checked: /^[-*] \[[xX]\]/.test(trimmedLine),
+        content: trimmedLine.replace(/^[-*] \[[ xX]\]\s/, ''),
+      });
+    } else if (trimmedLine.match(/^[-*] /)) {
+      blocks.push({ id: genId(), type: 'ul', indent, content: trimmedLine.slice(2) });
+    } else if (trimmedLine.match(/^\d+\. /)) {
+      blocks.push({ id: genId(), type: 'ol', indent, content: trimmedLine.replace(/^\d+\.\s/, '') });
+    } else if (line.startsWith('> [!NOTE] ')) {
+      blocks.push({ id: genId(), type: 'callout', content: line.slice(10) });
     } else if (line.startsWith('> ')) {
       blocks.push({ id: genId(), type: 'blockquote', content: line.slice(2) });
     } else if (line.match(/^---+$/)) {
@@ -64,7 +79,16 @@ export function parseMarkdown(content, fallbackName) {
 export function inlineMarkdownToHTML(text) {
   if (!text) return '';
   return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => {
+      const safeHref = /^(https?:|mailto:|#|\.\.?\/|\/)/i.test(href) ? href.replace(/"/g, '&quot;') : '#';
+      return `<a href="${safeHref}" target="_blank" rel="noreferrer">${label}</a>`;
+    })
     .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
+    .replace(/~~(.+?)~~/gs, '<s>$1</s>')
+    .replace(/`(.+?)`/gs, '<code>$1</code>')
     .replace(/_(.+?)_/gs, '<em>$1</em>')
     .replace(/==(.+?)==/gs, '<mark>$1</mark>')
     .replace(/\n/g, '<br>');
@@ -80,7 +104,11 @@ function nodeToMd(node) {
     case 'em':    case 'i': return `_${inner}_`;
     case 'u':               return `<u>${inner}</u>`;
     case 'mark':            return `==${inner}==`;
+    case 's': case 'strike': return `~~${inner}~~`;
+    case 'code':             return `\`${inner}\``;
+    case 'a':                return `[${inner}](${node.getAttribute('href') || ''})`;
     case 'br':              return '\n';
+    case 'div': case 'p':   return inner + '\n';
     default:                return inner;
   }
 }
@@ -97,23 +125,35 @@ export function serializeMarkdown(title, blocks, contentRefs) {
   const lines = [];
   if (title.trim()) lines.push('# ' + title.trim());
 
-  let olIndex = 1;
+  const olCounts = [0, 0, 0, 0, 0];
   for (const block of blocks) {
     const el = contentRefs?.get(block.id);
     const text = el
       ? (block.type === 'code' ? el.textContent : htmlToInlineMarkdown(el.innerHTML))
       : block.content;
 
+    const indent = '  '.repeat(block.indent || 0);
+    const olIndent = Math.min(block.indent || 0, 4);
+    if (block.type === 'ol') {
+      olCounts[olIndent] += 1;
+      olCounts.fill(0, olIndent + 1);
+    } else if (!['ul', 'todo'].includes(block.type)) {
+      olCounts.fill(0);
+    }
+
     switch (block.type) {
       case 'h1': lines.push('# ' + text); break;
       case 'h2': lines.push('## ' + text); break;
       case 'h3': lines.push('### ' + text); break;
       case 'ul':
-        text.split('\n').forEach(l => lines.push('- ' + l));
+        text.split('\n').forEach(l => lines.push(indent + '- ' + l));
         break;
       case 'ol':
-        text.split('\n').forEach(l => lines.push(olIndex++ + '. ' + l));
+        text.split('\n').forEach((l, index) => lines.push(indent + (olCounts[olIndent] + index) + '. ' + l));
         break;
+      case 'todo': lines.push(`${indent}- [${block.checked ? 'x' : ' '}] ${text}`); break;
+      case 'callout': lines.push('> [!NOTE] ' + text); break;
+      case 'image': lines.push(`![${text.replace(/\]/g, '\\]')}](${block.src})`); break;
       case 'blockquote': lines.push('> ' + text); break;
       case 'code': lines.push('```\n' + text + '\n```'); break;
       case 'hr': lines.push('---'); break;

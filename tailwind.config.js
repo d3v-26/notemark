@@ -37,12 +37,6 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        violet: {
-          DEFAULT: '#7c3aed',
-          hover: '#6d28d9',
-          subtle: 'rgba(124,58,237,0.12)',
-          ring: 'rgba(124,58,237,0.3)',
-        },
       },
       borderRadius: {
         lg: 'var(--radius)',

@@ -47,7 +47,7 @@ export default function PageOutline({ headings, contentRefs, scrollContainer }) 
               style={{
                 paddingLeft: INDENT[h.type] + 10,
                 color: isActive
-                  ? 'rgba(167,139,250,0.9)'
+                  ? 'rgba(237,104,70,0.95)'
                   : 'hsl(var(--muted-foreground) / 0.35)',
               }}
               onMouseEnter={e => {

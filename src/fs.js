@@ -86,3 +86,31 @@ export async function deleteFilePage(rootHandle, pagePath) {
   }
   await dir.removeEntry(parts[parts.length - 1], { recursive: true });
 }
+
+export async function writeAssetFile(rootHandle, file) {
+  const assetsDir = await rootHandle.getDirectoryHandle('.notemark-assets', { create: true });
+  const extension = file.name.includes('.') ? `.${file.name.split('.').pop().toLowerCase()}` : '';
+  const base = file.name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-z0-9-_]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'image';
+  const fileName = `${Date.now()}-${base}${extension}`;
+  const handle = await assetsDir.getFileHandle(fileName, { create: true });
+  const writable = await handle.createWritable();
+  await writable.write(file);
+  await writable.close();
+  return `.notemark-assets/${fileName}`;
+}
+
+export async function readAssetUrl(rootHandle, assetPath) {
+  if (/^(https?:|data:|blob:)/i.test(assetPath)) return assetPath;
+  const parts = assetPath.replace(/^\.\//, '').split('/').filter(Boolean);
+  let directory = rootHandle;
+  for (let i = 0; i < parts.length - 1; i++) {
+    directory = await directory.getDirectoryHandle(parts[i]);
+  }
+  const handle = await directory.getFileHandle(parts.at(-1));
+  const file = await handle.getFile();
+  return URL.createObjectURL(file);
+}

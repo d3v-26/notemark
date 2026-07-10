@@ -1,52 +1,62 @@
-import { FolderOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight, Check, FileText, FolderOpen, HardDrive, ShieldCheck } from 'lucide-react';
+
+function BrandMark() {
+  return <div className="brand-mark brand-mark-large" aria-hidden="true"><span /><span /><span /></div>;
+}
 
 export default function FolderPicker({ onOpen, reconnect, storedName }) {
   const hasStored = reconnect && storedName;
+  const supported = 'showDirectoryPicker' in window;
 
   return (
-    <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
-      <div className="text-center max-w-sm w-full mx-4 p-12 bg-card border border-border rounded-xl shadow-2xl">
-        {/* Logo */}
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-secondary border border-border rounded-xl text-xl font-bold tracking-wide text-primary mb-5 shadow-[0_0_0_4px_rgba(124,58,237,0.12)]">
-          NC
+    <main className="welcome-screen">
+      <div className="welcome-noise" />
+      <section className="welcome-copy-panel">
+        <div className="welcome-brand"><BrandMark /><span>NOTEMARK</span></div>
+        <div className="welcome-copy">
+          <p className="eyebrow">LOCAL-FIRST WRITING</p>
+          <h1>Your thoughts.<br /><em>Exactly where</em><br />you left them.</h1>
+          <p>A calm writing space that works directly with the Markdown files on your computer. No account. No cloud. No lock-in.</p>
         </div>
+        <div className="welcome-proof">
+          <span><ShieldCheck size={16} /> Private by design</span>
+          <span><FileText size={16} /> Plain Markdown</span>
+        </div>
+      </section>
 
-        <h2 className="text-lg font-semibold text-foreground mb-2.5">
-          {hasStored ? `Reconnect to "${storedName}"` : 'Your notes, your machine'}
-        </h2>
+      <section className="welcome-action-panel">
+        <div className="folder-card">
+          <div className="folder-illustration" aria-hidden="true">
+            <div className="folder-shape"><span /></div>
+          </div>
+          <p className="eyebrow">YOUR WORKSPACE</p>
+          <h2>{hasStored ? `Welcome back to ${storedName}` : 'Choose a home for your notes'}</h2>
+          <p className="folder-card-copy">
+            {hasStored
+              ? 'Your browser just needs permission to reconnect to this folder.'
+              : 'Select any folder. Notemark will read and save Markdown files there—nothing is ever uploaded.'}
+          </p>
 
-        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-          {hasStored
-            ? 'Grant permission to access your notes folder again.'
-            : 'Choose a folder to store your pages as markdown files. Files stay on your machine — nothing is uploaded anywhere.'}
-        </p>
-
-        {'showDirectoryPicker' in window ? (
-          <>
-            <Button onClick={() => onOpen(false)} className="gap-2 mb-4 w-full">
-              <FolderOpen size={16} />
-              {hasStored ? 'Reconnect Folder' : 'Open Folder'}
-            </Button>
-            {hasStored && (
-              <button
-                onClick={() => onOpen(true)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Choose a different folder
+          {supported ? (
+            <>
+              <button className="folder-cta" onClick={() => onOpen(false)}>
+                <FolderOpen size={18} />
+                <span>{hasStored ? `Reconnect ${storedName}` : 'Choose notes folder'}</span>
+                <ArrowRight size={17} />
               </button>
-            )}
-          </>
-        ) : (
-          <Button disabled className="w-full">
-            Browser not supported
-          </Button>
-        )}
+              {hasStored && <button className="text-button" onClick={() => onOpen(true)}>Use a different folder</button>}
+            </>
+          ) : (
+            <div className="unsupported-message">This browser does not support local folder access. Open Notemark in Chrome or Edge.</div>
+          )}
 
-        <p className="text-xs text-muted-foreground/50 mt-4">
-          Works in Chrome and Edge
-        </p>
-      </div>
-    </div>
+          <div className="privacy-note">
+            <HardDrive size={16} />
+            <span><strong>Stays on this device</strong>Your files never pass through a server.</span>
+            <Check size={15} />
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

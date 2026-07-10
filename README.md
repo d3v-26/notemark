@@ -1,69 +1,72 @@
 # Notemark
 
-A minimal local-first note-taking app. Your pages live as plain markdown files on your own machine — no accounts, no sync, no cloud.
+A private, local-first Markdown workspace with a focused block editor. Notemark opens a folder on your computer and works directly with the `.md` files inside it—no account, database, sync service, or proprietary format.
 
-![Dark UI with sidebar and block editor](public/ss.png)
+## What it does
 
-## How it works
+- **Writes straight to Markdown** using the browser's File System Access API
+- **Block editor** for paragraphs, headings, nested lists, to-dos, callouts, quotes, code, and dividers
+- **Local images** copied into `.notemark-assets/`, captioned in the editor, and saved with standard Markdown image syntax
+- **Full-text command search** across page titles and contents with `Cmd/Ctrl + K`
+- **Keyboard-first creation** with `Cmd/Ctrl + N` and slash commands
+- **Reliable autosave** with local save, progress, and error states
+- **Nested folder navigation** with rename and delete actions
+- **Formatting tools** for bold, italic, underline, strike, inline code, links, and highlights
+- **Implicit list behavior**: `Enter` continues a list, `Tab` nests it, `Shift+Tab` lifts it, and an empty item exits naturally
+- **Block actions** to add, duplicate, move, delete, drag-to-reorder, or transform blocks
+- **Notion-style shortcuts** for Markdown conversion, block types, duplication, movement, and to-do toggling
+- **Heading outline**, word count, and Markdown copy
+- **Page options** for width, typography, image insertion, and Markdown download
+- **Responsive workspace** for desktop and narrow screens
+- **Light and dark themes** remembered between sessions
 
-Pick a folder on your machine. NC reads and writes `.md` files directly to that folder using the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API). Nothing leaves your computer.
-
-## Features
-
-- **Block editor** — paragraphs, headings, lists, quotes, code, and dividers
-- **Slash commands** — type `/` to insert any block type
-- **Drag to reorder** — grab the handle to reorder blocks
-- **Page outline** — heading navigator shown in the right margin on wide screens
-- **Cmd+K search** — fuzzy-filter all pages instantly
-- **Auto-save** — changes are written to disk 800ms after you stop typing
-- **Persistent folder** — remembers your folder across sessions via IndexedDB
-- **Persistent last page** — reopens the last page you had open after a reload
-
-## Requirements
-
-Chrome or Edge (desktop). The File System Access API is not available in Firefox or Safari.
-
-## Getting started
+## Run locally
 
 ```bash
-git clone https://github.com/you/nc.git
-cd nc
 npm install
+npm run dev
+```
+
+Vite starts the development app at `http://localhost:5173`.
+
+For a production build:
+
+```bash
 npm run build
 npm start
 ```
 
-Then open `http://localhost:3000` in Chrome or Edge and pick a folder.
+The Express server serves `dist/` at `http://localhost:3000`.
 
-## Development
+## Browser support
 
-```bash
-npm run dev   # Vite dev server at http://localhost:5173
-```
+Notemark needs the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), so use a Chromium-based desktop browser such as Chrome or Edge. Folder access is permission-based and may need to be re-approved after restarting the browser.
+
+## How storage works
+
+The selected directory handle is remembered in IndexedDB. Page contents remain ordinary files in the selected folder, and the last-opened page and theme are kept in local storage. The app has no runtime API and does not upload note contents.
 
 ## Stack
 
-- **Backend** — Node.js + Express (serves the built frontend, no runtime API calls)
-- **Frontend** — React 18 + Vite + Tailwind CSS + shadcn/ui
-- **Storage** — File System Access API + IndexedDB (handle) + localStorage (last page)
+- React 18 and Vite
+- Tailwind CSS and Radix UI primitives
+- Lucide icons
+- Express for static production hosting
+- File System Access API, IndexedDB, and local storage
 
-## Project structure
+## Project layout
 
-```
-nc/
-├── server.js          # Express — serves dist/
-├── src/
-│   ├── App.jsx        # Root state (folder, pages, current page)
-│   ├── fs.js          # File System Access API helpers
-│   ├── markdown.js    # Markdown parser / serializer
-│   └── components/
-│       ├── BlockEditor.jsx
-│       ├── Block.jsx
-│       ├── PageTree.jsx
-│       ├── PageOutline.jsx
-│       ├── SearchDialog.jsx
-│       └── ui/        # shadcn/ui primitives
-└── dist/              # Vite build output (served by Express)
+```text
+src/
+├── App.jsx                 # workspace state and shortcuts
+├── fs.js                   # local filesystem and IndexedDB helpers
+├── markdown.js             # Markdown parser and serializer
+└── components/
+    ├── AppSidebar.jsx      # navigation and workspace controls
+    ├── BlockEditor.jsx     # editor, autosave, and page tools
+    ├── Block.jsx           # editable block behavior
+    ├── SearchDialog.jsx    # full-text command search
+    └── ui/                 # Radix-based primitives
 ```
 
 ## License
