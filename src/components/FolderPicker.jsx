@@ -33,7 +33,7 @@ export default function FolderPicker({ onOpen, reconnect, storedName }) {
           <h2>{hasStored ? `Welcome back to ${storedName}` : 'Choose a home for your notes'}</h2>
           <p className="folder-card-copy">
             {hasStored
-              ? 'Your browser just needs permission to reconnect to this folder.'
+              ? 'For your privacy, Notemark asks you to reconnect this folder every 2 days.'
               : 'Select any folder. Notemark will read and save Markdown files there—nothing is ever uploaded.'}
           </p>
 

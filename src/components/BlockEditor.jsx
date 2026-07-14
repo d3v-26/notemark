@@ -5,12 +5,20 @@ import Block from './Block';
 import SlashMenu from './SlashMenu';
 import FormatToolbar from './FormatToolbar';
 import PageOutline from './PageOutline';
+import WorkspaceStatus from './WorkspaceStatus';
 import { AlertCircle, Check, Copy, Download, ImagePlus, Menu, MoreHorizontal, PanelTop, Type } from 'lucide-react';
 
 let blockIdCounter = 0;
 function genBlockId() { return `blk${++blockIdCounter}`; }
 
-export default function BlockEditor({ rootHandle, currentPage, sidebarOpen, onToggleSidebar }) {
+export default function BlockEditor({
+  rootHandle,
+  currentPage,
+  sidebarOpen,
+  onToggleSidebar,
+  onReconnectFolder,
+  onChangeFolder,
+}) {
   const [blocks, setBlocks] = useState([]);
   const [saveState, setSaveState] = useState('idle'); // 'saving' | 'saved' | 'idle'
   const [wordCount, setWordCount] = useState(0);
@@ -492,6 +500,11 @@ export default function BlockEditor({ rootHandle, currentPage, sidebarOpen, onTo
               </div>
             )}
           </div>
+          <WorkspaceStatus
+            folderName={rootHandle?.name}
+            onReconnect={onReconnectFolder}
+            onSwitch={onChangeFolder}
+          />
         </div>
       </div>
 

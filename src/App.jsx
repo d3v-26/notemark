@@ -1,41 +1,91 @@
 import { useState, useEffect } from 'react';
 import { useCallback } from 'react';
-import { loadHandle, saveHandle, buildTree, writeFilePage } from './fs';
+import {
+  HANDLE_SESSION_DURATION_MS,
+  buildTree,
+  isHandleSessionValid,
+  loadHandle,
+  loadHandleAuthorizedAt,
+  saveHandle,
+  writeFilePage,
+} from './fs';
 import FolderPicker from './components/FolderPicker';
 import AppSidebar from './components/AppSidebar';
 import BlockEditor from './components/BlockEditor';
 import EmptyState from './components/EmptyState';
 import SearchDialog from './components/SearchDialog';
+import WorkspaceStatus from './components/WorkspaceStatus';
+import { Menu } from 'lucide-react';
 
 export default function App() {
   const [rootHandle, setRootHandle] = useState(null);
   const [pages, setPages] = useState([]);
   const [currentPage, setCurrentPage] = useState(null);
   const [storedHandle, setStoredHandle] = useState(null);
+  const [handleAuthorizedAt, setHandleAuthorizedAt] = useState(null);
   const [reconnect, setReconnect] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('notemark:theme') || 'light');
   const [createRequested, setCreateRequested] = useState(0);
 
-  // On mount: try to load handle from IndexedDB
+  // On mount: restore access only while the app-level authorization is fresh.
   useEffect(() => {
+    let cancelled = false;
+
     async function init() {
-      const handle = await loadHandle();
-      if (!handle) return;
+      const [handle, authorizedAt] = await Promise.all([
+        loadHandle(),
+        loadHandleAuthorizedAt(),
+      ]);
+      if (cancelled || !handle) return;
       setStoredHandle(handle);
+      if (!isHandleSessionValid(authorizedAt)) {
+        setReconnect(true);
+        return;
+      }
       try {
         const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (cancelled) return;
         if (perm === 'granted') {
+          setHandleAuthorizedAt(authorizedAt);
           setRootHandle(handle);
         } else {
           setReconnect(true);
         }
       } catch {
+        if (cancelled) return;
         setStoredHandle(null);
       }
     }
     init();
+    return () => { cancelled = true; };
   }, []);
+
+  // Expire an open workspace after 48 hours, including when returning to a
+  // browser tab that was left in the background.
+  useEffect(() => {
+    if (!rootHandle || !handleAuthorizedAt) return undefined;
+
+    const expireIfNeeded = () => {
+      if (isHandleSessionValid(handleAuthorizedAt)) return;
+      setRootHandle(null);
+      setHandleAuthorizedAt(null);
+      setReconnect(true);
+    };
+    const remaining = Math.max(
+      0,
+      HANDLE_SESSION_DURATION_MS - (Date.now() - handleAuthorizedAt),
+    );
+    const timer = window.setTimeout(expireIfNeeded, remaining);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') expireIfNeeded();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [rootHandle, handleAuthorizedAt]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -150,7 +200,12 @@ export default function App() {
       }
     }
 
-    await saveHandle(handle);
+    const authorizedAt = await saveHandle(handle);
+    if (forceNew) {
+      setPages([]);
+      setCurrentPage(null);
+    }
+    setHandleAuthorizedAt(authorizedAt);
     setStoredHandle(handle);
     setRootHandle(handle);
     setReconnect(false);
@@ -235,12 +290,27 @@ export default function App() {
             sidebarOpen={sidebarOpen}
             onToggleSidebar={() => setSidebarOpen(o => !o)}
             theme={theme}
+            onReconnectFolder={() => handleOpenFolder(false)}
+            onChangeFolder={() => handleOpenFolder(true)}
           />
         ) : (
-          <EmptyState
-            onCreate={() => { setSidebarOpen(true); setCreateRequested(value => value + 1); }}
-            onSearch={() => window.dispatchEvent(new CustomEvent('nc:open-search'))}
-          />
+          <div className="editor-shell flex-1 flex flex-col min-h-0 overflow-hidden bg-background">
+            <div className="editor-topbar">
+              <div className="flex items-center min-w-0 gap-2">
+                {!sidebarOpen && <button className="icon-button" title="Open sidebar" onClick={() => setSidebarOpen(true)}><Menu size={17} /></button>}
+                <span className="breadcrumb">Workspace</span>
+              </div>
+              <WorkspaceStatus
+                folderName={rootHandle?.name}
+                onReconnect={() => handleOpenFolder(false)}
+                onSwitch={() => handleOpenFolder(true)}
+              />
+            </div>
+            <EmptyState
+              onCreate={() => { setSidebarOpen(true); setCreateRequested(value => value + 1); }}
+              onSearch={() => window.dispatchEvent(new CustomEvent('nc:open-search'))}
+            />
+          </div>
         )}
       </main>
 

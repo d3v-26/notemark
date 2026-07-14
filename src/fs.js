@@ -1,5 +1,10 @@
 // ── IndexedDB helpers ──
 
+const HANDLE_KEY = 'root';
+const HANDLE_AUTHORIZED_AT_KEY = 'root-authorized-at';
+
+export const HANDLE_SESSION_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+
 export function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('nc', 1);
@@ -11,10 +16,13 @@ export function openDB() {
 
 export async function saveHandle(handle) {
   const db = await openDB();
+  const authorizedAt = Date.now();
   return new Promise((resolve) => {
     const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(handle, 'root');
-    tx.oncomplete = resolve;
+    const store = tx.objectStore('handles');
+    store.put(handle, HANDLE_KEY);
+    store.put(authorizedAt, HANDLE_AUTHORIZED_AT_KEY);
+    tx.oncomplete = () => resolve(authorizedAt);
   });
 }
 
@@ -22,10 +30,25 @@ export async function loadHandle() {
   const db = await openDB();
   return new Promise((resolve) => {
     const tx = db.transaction('handles', 'readonly');
-    const req = tx.objectStore('handles').get('root');
+    const req = tx.objectStore('handles').get(HANDLE_KEY);
     req.onsuccess = () => resolve(req.result ?? null);
     req.onerror = () => resolve(null);
   });
+}
+
+export async function loadHandleAuthorizedAt() {
+  const db = await openDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get(HANDLE_AUTHORIZED_AT_KEY);
+    req.onsuccess = () => resolve(Number.isFinite(req.result) ? req.result : null);
+    req.onerror = () => resolve(null);
+  });
+}
+
+export function isHandleSessionValid(authorizedAt, now = Date.now()) {
+  if (!Number.isFinite(authorizedAt) || authorizedAt > now) return false;
+  return now - authorizedAt < HANDLE_SESSION_DURATION_MS;
 }
 
 // ── File System helpers ──

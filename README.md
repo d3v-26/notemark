@@ -10,6 +10,7 @@ A private, local-first Markdown workspace with a focused block editor. Notemark 
 - **Full-text command search** across page titles and contents with `Cmd/Ctrl + K`
 - **Keyboard-first creation** with `Cmd/Ctrl + N` and slash commands
 - **Reliable autosave** with local save, progress, and error states
+- **Visible folder status** with quick actions to refresh access or switch workspaces
 - **Nested folder navigation** with rename and delete actions
 - **Formatting tools** for bold, italic, underline, strike, inline code, links, and highlights
 - **Implicit list behavior**: `Enter` continues a list, `Tab` nests it, `Shift+Tab` lifts it, and an empty item exits naturally
@@ -44,7 +45,7 @@ Notemark needs the [File System Access API](https://developer.mozilla.org/en-US/
 
 ## How storage works
 
-The selected directory handle is remembered in IndexedDB. Page contents remain ordinary files in the selected folder, and the last-opened page and theme are kept in local storage. The app has no runtime API and does not upload note contents.
+The selected directory handle is remembered in IndexedDB, but Notemark requires an explicit folder reconnect every 48 hours. Page contents remain ordinary files in the selected folder, and the last-opened page and theme are kept in local storage. The app has no runtime API and does not upload note contents.
 
 ## Stack
 
